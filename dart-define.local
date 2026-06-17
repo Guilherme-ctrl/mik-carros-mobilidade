@@ -1,0 +1,4 @@
+SUPABASE_URL=https://wbltecjgbthahmhsgwah.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_KMYFFSvuPsPtY0qt_FHiTw_ksi_Nhfy
+GOOGLE_MAPS_API_KEY=AIzaSyCWCs8eUvE2rEikVqHb6OueMWXXOPJ37Ck
+SENTRY_DSN=https://8d09b2a21ecfc07cf0a6f53adef9dad2@o4511577622708224.ingest.us.sentry.io/4511577638109184

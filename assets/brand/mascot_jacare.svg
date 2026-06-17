@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Body -->
+  <ellipse cx="50" cy="66" rx="26" ry="18" fill="#2D7A4A"/>
+  <!-- Head -->
+  <ellipse cx="50" cy="44" rx="22" ry="18" fill="#38956B"/>
+  <!-- Snout upper jaw -->
+  <ellipse cx="50" cy="57" rx="18" ry="8" fill="#38956B"/>
+  <!-- Mouth line -->
+  <path d="M34 57 Q50 63 66 57" stroke="#1A4B2E" stroke-width="2" fill="#1A3D24" stroke-linecap="round"/>
+  <!-- Teeth upper -->
+  <rect x="37" y="59" width="4" height="5" rx="2" fill="white"/>
+  <rect x="46" y="60" width="4" height="5" rx="2" fill="white"/>
+  <rect x="55" y="60" width="4" height="5" rx="2" fill="white"/>
+  <rect x="63" y="59" width="4" height="5" rx="2" fill="white"/>
+  <!-- Left eye white -->
+  <circle cx="38" cy="36" r="8" fill="white"/>
+  <!-- Right eye white -->
+  <circle cx="62" cy="36" r="8" fill="white"/>
+  <!-- Left pupil -->
+  <circle cx="39" cy="37" r="5" fill="#111827"/>
+  <!-- Right pupil -->
+  <circle cx="63" cy="37" r="5" fill="#111827"/>
+  <!-- Eye shine left -->
+  <circle cx="37" cy="35" r="2" fill="white"/>
+  <!-- Eye shine right -->
+  <circle cx="61" cy="35" r="2" fill="white"/>
+  <!-- Nostrils -->
+  <ellipse cx="44" cy="51" rx="2.5" ry="1.5" fill="#1A4B2E"/>
+  <ellipse cx="56" cy="51" rx="2.5" ry="1.5" fill="#1A4B2E"/>
+  <!-- Brand pink blush left -->
+  <ellipse cx="27" cy="47" rx="5" ry="3" fill="#E91E8C" opacity="0.45"/>
+  <!-- Brand pink blush right -->
+  <ellipse cx="73" cy="47" rx="5" ry="3" fill="#E91E8C" opacity="0.45"/>
+  <!-- Tail -->
+  <path d="M74 70 Q88 63 92 72 Q87 78 76 75" fill="#2D7A4A"/>
+  <!-- Front legs -->
+  <ellipse cx="35" cy="82" rx="7" ry="4" fill="#2D7A4A"/>
+  <ellipse cx="65" cy="82" rx="7" ry="4" fill="#2D7A4A"/>
+  <!-- Scale ridge on back -->
+  <path d="M44 72 Q50 68 56 72" stroke="#1E5C38" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M44 78 Q50 74 56 78" stroke="#1E5C38" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+</svg>
