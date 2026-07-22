@@ -1,4 +1,4 @@
-package com.example.carros_mik_dundee
+package com.mikdundee.carros
 
 import android.app.NotificationChannel
 import android.app.NotificationManager

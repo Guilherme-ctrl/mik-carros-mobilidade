@@ -1,5 +1,21 @@
 import 'package:equatable/equatable.dart';
 
+enum RequestOutcome {
+  found,
+  notFound;
+
+  static RequestOutcome? fromString(String? s) => switch (s) {
+        'found'     => found,
+        'not_found' => notFound,
+        _           => null,
+      };
+
+  String get supabaseValue => switch (this) {
+        found    => 'found',
+        notFound => 'not_found',
+      };
+}
+
 enum MissionStatus {
   open,
   underReview,
@@ -66,6 +82,7 @@ class Mission extends Equatable {
   final String? mapsLink;
   final String? notes;
   final MissionStatus status;
+  final RequestOutcome? outcome;
   final String? leaderName;
   final String? leaderPhone;
   final DateTime createdAt;
@@ -81,6 +98,7 @@ class Mission extends Equatable {
     this.mapsLink,
     this.notes,
     required this.status,
+    this.outcome,
     this.leaderName,
     this.leaderPhone,
     required this.createdAt,
@@ -99,6 +117,7 @@ class Mission extends Equatable {
       mapsLink:     map['maps_link'] as String?,
       notes:        map['notes'] as String?,
       status:       MissionStatus.fromString(map['status'] as String),
+      outcome:      RequestOutcome.fromString(map['outcome'] as String?),
       leaderName:   leader?['name'] as String?,
       leaderPhone:  leader?['phone'] as String?,
       createdAt:    DateTime.parse(map['created_at'] as String),
@@ -108,5 +127,5 @@ class Mission extends Equatable {
   String get fullAddress => '$street, $streetNumber — $neighborhood';
 
   @override
-  List<Object?> get props => [id, status];
+  List<Object?> get props => [id, status, outcome];
 }

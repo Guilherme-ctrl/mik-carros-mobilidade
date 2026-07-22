@@ -1,0 +1,1 @@
+-dontwarn com.google.maps.android.clustering.view.DefaultAdvancedMarkersClusterRenderer

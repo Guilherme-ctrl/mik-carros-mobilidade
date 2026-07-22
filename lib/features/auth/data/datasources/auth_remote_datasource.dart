@@ -5,6 +5,7 @@ abstract class AuthRemoteDatasource {
   Future<UserSession> signIn({required String email, required String password});
   Future<void> signOut();
   Future<UserSession?> getCurrentSession();
+  Future<void> updatePushToken(String token);
 }
 
 class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
@@ -33,6 +34,17 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
     final session = _client.auth.currentSession;
     if (session == null) return null;
     return _sessionForUser(session.user);
+  }
+
+  @override
+  Future<void> updatePushToken(String token) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+    await _client.from('push_tokens').upsert({
+      'user_id': userId,
+      'push_token': token,
+      'updated_at': DateTime.now().toIso8601String(),
+    });
   }
 
   Future<UserSession> _sessionForUser(User user) async {

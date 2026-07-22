@@ -6,6 +6,8 @@ abstract class MissionsRemoteDatasource {
   Future<String?> getDriverCarId();
   Future<List<Map<String, dynamic>>> getMissionsForCar(String carId);
   Future<void> updateMissionStatus(String requestId, String newStatus);
+  Future<void> setOutcomeNotFound(String requestId);
+  Future<void> setOutcomeFound(String requestId);
   // Emits null whenever a DB change occurs — cubit uses it as a reload trigger
   Stream<void> watchMissionsForCar(String carId);
 
@@ -62,8 +64,30 @@ class MissionsRemoteDatasourceImpl implements MissionsRemoteDatasource {
   }
 
   @override
+  Future<void> setOutcomeNotFound(String requestId) async {
+    await _client
+        .from('requests')
+        .update({'outcome': 'not_found'})
+        .eq('id', requestId);
+  }
+
+  @override
+  Future<void> setOutcomeFound(String requestId) async {
+    final response = await _client.functions.invoke(
+      'set-mission-outcome',
+      body: {'requestId': requestId},
+    );
+    if (response.status != 200) {
+      final error = response.data?['error'] ?? 'Erro ao definir resultado';
+      throw Exception(error);
+    }
+  }
+
+  @override
   Stream<void> watchMissionsForCar(String carId) {
-    // T10.15 — Realtime filtered by assigned_car_id; catches new assignments too
+    // No column filter: Supabase Realtime eq-filters on UPDATE only work with
+    // REPLICA IDENTITY FULL. Listening to all request changes is safe because
+    // the callback re-fetches with the server-side assigned_car_id filter.
     final controller = StreamController<void>.broadcast();
     RealtimeChannel? channel;
 
@@ -73,11 +97,6 @@ class MissionsRemoteDatasourceImpl implements MissionsRemoteDatasource {
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'requests',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'assigned_car_id',
-            value: carId,
-          ),
           callback: (_) {
             if (!controller.isClosed) controller.add(null);
           },

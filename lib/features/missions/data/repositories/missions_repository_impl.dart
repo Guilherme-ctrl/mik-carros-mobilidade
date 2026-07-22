@@ -40,6 +40,26 @@ class MissionsRepositoryImpl implements MissionsRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, void>> setOutcomeNotFound(String requestId) async {
+    try {
+      await _datasource.setOutcomeNotFound(requestId);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> setOutcomeFound(String requestId) async {
+    try {
+      await _datasource.setOutcomeFound(requestId);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   // T10.5 — converts the raw change-signal stream into Stream<Mission?>
   @override
   Stream<Mission?> watchActiveMission(String carId) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../../core/design/app_colors.dart';
 import '../../../../../core/design/app_spacing.dart';
 import '../../domain/entities/comment.dart';
@@ -26,6 +27,7 @@ class _CommentsSectionState extends State<CommentsSection> {
   List<Comment> _comments = [];
   bool _loading = true;
   bool _sending = false;
+  String? _currentUserId;
   StreamSubscription<void>? _realtimeSub;
 
   late final GetComments _getComments;
@@ -38,6 +40,9 @@ class _CommentsSectionState extends State<CommentsSection> {
     _getComments = Modular.get<GetComments>();
     _addComment = Modular.get<AddComment>();
     _repository = Modular.get<MissionsRepository>();
+
+    _currentUserId = Supabase.instance.client.auth.currentUser?.id;
+
     _load();
     _subscribeRealtime();
   }
@@ -92,7 +97,7 @@ class _CommentsSectionState extends State<CommentsSection> {
       (f) => ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(f.message), backgroundColor: AppColors.statusUnavailable),
       ),
-      (_) {},
+      (_) => _scrollToBottom(),
     );
   }
 
@@ -150,7 +155,17 @@ class _CommentsSectionState extends State<CommentsSection> {
               shrinkWrap: true,
               itemCount: _comments.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.s2),
-              itemBuilder: (_, i) => CommentBubble(comment: _comments[i]),
+              itemBuilder: (_, i) {
+                final comment = _comments[i];
+                final isOwn = comment.authorId == _currentUserId;
+                final showAuthor = !isOwn &&
+                    (i == 0 || _comments[i - 1].authorId != comment.authorId);
+                return CommentBubble(
+                  comment: comment,
+                  isOwn: isOwn,
+                  showAuthor: showAuthor,
+                );
+              },
             ),
           ),
         const SizedBox(height: AppSpacing.s3),

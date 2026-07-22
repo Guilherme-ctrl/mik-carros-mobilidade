@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/mission.dart';
 import '../../domain/repositories/missions_repository.dart';
 import '../../domain/usecases/get_my_missions.dart';
+import '../../domain/usecases/set_outcome_found.dart';
+import '../../domain/usecases/set_outcome_not_found.dart';
 import '../../domain/usecases/update_mission_status.dart';
 import '../../domain/usecases/watch_active_mission.dart';
 import 'missions_state.dart';
@@ -12,6 +14,8 @@ class MissionsCubit extends Cubit<MissionsState> {
   final GetMyMissions _getMyMissions;
   final UpdateMissionStatus _updateMissionStatus;
   final WatchActiveMission _watchActiveMission;
+  final SetOutcomeNotFound _setOutcomeNotFound;
+  final SetOutcomeFound _setOutcomeFound;
 
   String? _carId;
   StreamSubscription<Mission?>? _realtimeSub;
@@ -21,6 +25,8 @@ class MissionsCubit extends Cubit<MissionsState> {
     this._getMyMissions,
     this._updateMissionStatus,
     this._watchActiveMission,
+    this._setOutcomeNotFound,
+    this._setOutcomeFound,
   ) : super(MissionsInitial());
 
   Future<void> init() async {
@@ -61,6 +67,26 @@ class MissionsCubit extends Cubit<MissionsState> {
 
   Future<void> updateStatus(String requestId, String newStatus) async {
     final result = await _updateMissionStatus(requestId, newStatus);
+    result.fold(
+      (f) => emit(MissionsError(f.message)),
+      (_) {
+        if (_carId != null) _loadMissions(_carId!);
+      },
+    );
+  }
+
+  Future<void> setOutcomeNotFound(String requestId) async {
+    final result = await _setOutcomeNotFound(requestId);
+    result.fold(
+      (f) => emit(MissionsError(f.message)),
+      (_) {
+        if (_carId != null) _loadMissions(_carId!);
+      },
+    );
+  }
+
+  Future<void> setOutcomeFound(String requestId) async {
+    final result = await _setOutcomeFound(requestId);
     result.fold(
       (f) => emit(MissionsError(f.message)),
       (_) {

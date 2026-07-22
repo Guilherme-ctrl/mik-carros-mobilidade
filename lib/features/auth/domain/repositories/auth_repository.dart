@@ -11,4 +11,5 @@ abstract class AuthRepository {
   Future<Either<Failure, void>> signOut();
 
   Future<Either<Failure, UserSession?>> getCurrentSession();
+  Future<Either<Failure, void>> updatePushToken(String token);
 }

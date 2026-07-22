@@ -24,7 +24,7 @@ class MissionsPage extends StatefulWidget {
   State<MissionsPage> createState() => _MissionsPageState();
 }
 
-class _MissionsPageState extends State<MissionsPage> {
+class _MissionsPageState extends State<MissionsPage> with WidgetsBindingObserver {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _locationDenied = false;
   StreamSubscription<bool>? _locationSub;
@@ -33,6 +33,7 @@ class _MissionsPageState extends State<MissionsPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     BlocProvider.of<MissionsCubit>(context).init();
     BlocProvider.of<NotificationsCubit>(context).init();
     final locationService = Modular.get<LocationService>();
@@ -44,8 +45,16 @@ class _MissionsPageState extends State<MissionsPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _locationSub?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      BlocProvider.of<MissionsCubit>(context).retry();
+    }
   }
 
   Future<void> _logout() async {

@@ -51,6 +51,7 @@ AuthKey_*.p8
 *.mobileprovision
 google-services.json
 GoogleService-Info.plist
+android/*firebase-adminsdk*.json
 
 # Debug symbols (gerados no build)
 debug_info/

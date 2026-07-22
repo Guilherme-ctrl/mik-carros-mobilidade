@@ -7,6 +7,8 @@ abstract class MissionsRepository {
   Future<Either<Failure, String?>> getDriverCarId();
   Future<Either<Failure, List<Mission>>> getMissionsForCar(String carId);
   Future<Either<Failure, void>> updateMissionStatus(String requestId, String newStatus);
+  Future<Either<Failure, void>> setOutcomeNotFound(String requestId);
+  Future<Either<Failure, void>> setOutcomeFound(String requestId);
   // T10.5 — stream emits the current active mission whenever it changes
   Stream<Mission?> watchActiveMission(String carId);
 

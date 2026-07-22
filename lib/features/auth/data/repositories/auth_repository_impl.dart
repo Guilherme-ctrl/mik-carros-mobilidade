@@ -65,4 +65,14 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(const AuthFailure('Erro ao verificar sessão.'));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> updatePushToken(String token) async {
+    try {
+      await _datasource.updatePushToken(token);
+      return const Right(null);
+    } catch (_) {
+      return Left(const ServerFailure('Erro ao salvar token de notificação.'));
+    }
+  }
 }

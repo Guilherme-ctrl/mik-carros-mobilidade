@@ -68,6 +68,11 @@ jobs:
             debug_info/
 
       - name: Upload to TestFlight
+        # The App Store Connect API private key (AuthKey_K44R29RA89.p8) is NOT
+        # stored in the repository. It is supplied at runtime via the
+        # `APPSTORE_API_PRIVATE_KEY` GitHub Actions secret and reconstructed on
+        # the runner below. Do not commit the .p8 file (covered by *.p8 in
+        # .gitignore).
         env:
           APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
         run: |

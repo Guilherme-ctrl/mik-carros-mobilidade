@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LocationService {
@@ -15,6 +16,15 @@ class LocationService {
   Future<void> startTracking(String carId) async {
     _carId = carId;
     _timer?.cancel();
+
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      _permissionDenied = true;
+      _permissionDeniedController.add(true);
+      // ignore: avoid_print
+      print('[LocationService] location services disabled');
+      return;
+    }
 
     final permission = await Geolocator.requestPermission();
     final denied = permission == LocationPermission.denied ||
@@ -40,12 +50,41 @@ class LocationService {
   Future<void> _publishLocation() async {
     if (_carId == null) return;
     try {
-      final pos = await Geolocator.getCurrentPosition();
+      Position? pos;
+      try {
+        pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 15),
+          ),
+        );
+      } on LocationServiceDisabledException {
+        // GPS hardware disabled — fall back to network/Wi-Fi location
+        pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.medium,
+            timeLimit: Duration(seconds: 15),
+          ),
+        );
+      }
+
       // ignore: avoid_print
       print('[LocationService] pos lat=${pos.latitude} lng=${pos.longitude} acc=${pos.accuracy}');
+
+      Sentry.addBreadcrumb(Breadcrumb(
+        message: 'GPS fix: lat=${pos.latitude.toStringAsFixed(5)} lng=${pos.longitude.toStringAsFixed(5)} acc=${pos.accuracy.toStringAsFixed(1)}m car=$_carId',
+        category: 'gps',
+        level: SentryLevel.info,
+      ));
+
       if (pos.accuracy > 200) {
         // ignore: avoid_print
         print('[LocationService] accuracy too low (${pos.accuracy}m), skipping');
+        Sentry.addBreadcrumb(Breadcrumb(
+          message: 'GPS accuracy too low: ${pos.accuracy}m — skipped upsert',
+          category: 'gps',
+          level: SentryLevel.warning,
+        ));
         return;
       }
       await Supabase.instance.client.rpc('upsert_car_location', params: {
@@ -57,9 +96,24 @@ class LocationService {
       });
       // ignore: avoid_print
       print('[LocationService] upsert ok');
-    } catch (e) {
+    } on LocationServiceDisabledException catch (e, s) {
+      // Both high and medium accuracy failed — location truly disabled
+      // ignore: avoid_print
+      print('[LocationService] location service disabled');
+      _permissionDenied = true;
+      _permissionDeniedController.add(true);
+      await Sentry.captureException(e, stackTrace: s, withScope: (scope) {
+        scope.setTag('component', 'location_service');
+        scope.setTag('car_id', _carId ?? 'null');
+      });
+    } catch (e, s) {
       // ignore: avoid_print
       print('[LocationService] _publishLocation error: $e');
+      await Sentry.captureException(e, stackTrace: s, withScope: (scope) {
+        scope.setTag('component', 'location_service');
+        scope.setTag('car_id', _carId ?? 'null');
+        scope.setContexts('gps_error', {'car_id': _carId, 'error': e.toString()});
+      });
     }
   }
 

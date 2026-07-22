@@ -6,6 +6,7 @@ import '../../../../../core/design/app_spacing.dart';
 import '../../domain/entities/mission.dart';
 import 'comments_section.dart';
 import 'mission_action_button.dart';
+import 'outcome_buttons.dart';
 import 'package:carros_mik_dundee/shared/widgets/whatsapp_share_button.dart';
 
 class ActiveMissionCard extends StatelessWidget {
@@ -69,6 +70,10 @@ class ActiveMissionCard extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.s2),
                 _StatusChip(mission.status),
+                if (mission.outcome != null) ...[
+                  const SizedBox(width: AppSpacing.s1),
+                  OutcomeBadge(mission.outcome!),
+                ],
               ],
             ),
             const SizedBox(height: AppSpacing.s1),
@@ -128,6 +133,13 @@ class ActiveMissionCard extends StatelessWidget {
             ],
 
             MissionActionButton(mission: mission),
+            if (mission.outcome == RequestOutcome.found) ...[
+              const SizedBox(height: AppSpacing.s3),
+              const _CompletionMessage(),
+            ] else if (!mission.status.isTerminal) ...[
+              const SizedBox(height: AppSpacing.s3),
+              OutcomeButtons(mission: mission),
+            ],
             const SizedBox(height: AppSpacing.s4),
 
             CommentsSection(requestId: mission.id),
@@ -207,6 +219,38 @@ class _StatusChip extends StatelessWidget {
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
         ),
+      ),
+    );
+  }
+}
+
+class _CompletionMessage extends StatelessWidget {
+  const _CompletionMessage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.statusAvailableBg,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.check_circle_outline, color: AppColors.success, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            'Missão concluída — alvo encontrado!',
+            style: TextStyle(
+              color: AppColors.success,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+        ],
       ),
     );
   }
