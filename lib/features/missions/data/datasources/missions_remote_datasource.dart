@@ -49,19 +49,37 @@ class MissionsRemoteDatasourceImpl implements MissionsRemoteDatasource {
     if (user == null) return null;
 
     final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString(_prefKey(user.id));
-    if (cached != null) return cached;
+    final key = _prefKey(user.id);
 
-    final row = await _client
-        .from('cars')
-        .select('id')
-        .eq('driver_user_id', user.id)
-        .maybeSingle();
+    // O cache era consultado PRIMEIRO e nunca invalidado ("se tem cache,
+    // devolve"), então trocar o motorista de carro deixava o app preso ao carro
+    // antigo para sempre. Medido no Sentry (FLUTTER-D): 5.924 eventos de
+    // "Forbidden: car ... does not belong to current user" vindos de UM
+    // aparelho, entre 25 e 27/07 — cada atualização de localização falhando.
+    //
+    // Agora a rede manda e o cache é plano B. É para isso que ele serve: o
+    // motorista abrir o app numa área sem sinal e ainda saber qual é o carro
+    // dele. Não para congelar uma resposta antiga.
+    try {
+      final row = await _client
+          .from('cars')
+          .select('id')
+          .eq('driver_user_id', user.id)
+          .maybeSingle();
 
-    if (row == null) return null;
-    final carId = row['id'] as String;
-    await prefs.setString(_prefKey(user.id), carId);
-    return carId;
+      if (row == null) {
+        // Ficou sem carro. O cache NÃO pode sobreviver a isto — é exatamente o
+        // estado que produzia o erro em looping.
+        await prefs.remove(key);
+        return null;
+      }
+
+      final carId = row['id'] as String;
+      await prefs.setString(key, carId);
+      return carId;
+    } catch (_) {
+      return prefs.getString(key);
+    }
   }
 
   @override

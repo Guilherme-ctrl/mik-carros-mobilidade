@@ -91,11 +91,34 @@ class AuthCubit extends Cubit<AuthState> {
         sound: false,
       );
 
-      // On iOS the APNs token is registered asynchronously after app launch.
-      // FCM throws apns-token-not-set if getToken() is called before APNs
-      // is ready, so we await getAPNSToken() first to block until it's set.
+      // No iOS o token do APNs é registrado de forma assíncrona depois que o
+      // app sobe, e o FCM lança apns-token-not-set se getToken() for chamado
+      // antes disso.
+      //
+      // O `await getAPNSToken()` que estava aqui NÃO resolvia: ele não espera
+      // nada — devolve o token atual ou null na hora, então o guard era inócuo
+      // exatamente no caso em que era necessário. Medido no Sentry
+      // (FLUTTER-N, 24/08): o erro continuou acontecendo com o guard no lugar.
+      //
+      // Espera de verdade: tenta até ~5s antes de desistir. Desistir também é
+      // aceitável — sem token o push não chega, mas o app inteiro não pode
+      // travar na tela de login por causa disso.
       if (Platform.isIOS) {
-        await messaging.getAPNSToken();
+        const tentativas = 10;
+        const intervalo = Duration(milliseconds: 500);
+        String? apns;
+        for (var i = 0; i < tentativas; i++) {
+          apns = await messaging.getAPNSToken();
+          if (apns != null) break;
+          if (i < tentativas - 1) await Future.delayed(intervalo);
+        }
+        Sentry.addBreadcrumb(Breadcrumb(
+          message: apns != null
+              ? 'APNs token pronto'
+              : 'APNs token não ficou pronto em ${tentativas * intervalo.inMilliseconds ~/ 1000}s',
+          category: 'fcm',
+          level: apns != null ? SentryLevel.info : SentryLevel.warning,
+        ));
       }
 
       // T19.13 — upload current token and keep it fresh on rotation
