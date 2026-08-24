@@ -3,6 +3,7 @@ class AppConfig {
   static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
   static const googleMapsApiKey = String.fromEnvironment('GOOGLE_MAPS_API_KEY');
   static const sentryDsn = String.fromEnvironment('SENTRY_DSN');
-  static const appVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.0.0');
-  static const buildNumber = String.fromEnvironment('BUILD_NUMBER', defaultValue: '1');
+  // appVersion/buildNumber saíram daqui: vinham de --dart-define que ninguém
+  // passava, então serviam só para reportar uma versão falsa ao Sentry. Agora
+  // main.dart lê do bundle via PackageInfo.
 }

@@ -61,6 +61,10 @@ dependencies:
 
   # Observabilidade
   sentry_flutter: ^8.14.2
+  # Já vinha na árvore como dependência do sentry_flutter. Declarada aqui
+  # porque main.dart passou a usá-la direto — depender de um pacote
+  # transitivo o faz sumir sem aviso num upgrade do Sentry.
+  package_info_plus: ^9.0.1
 
   # Utilitários
   url_launcher: ^6.3.1
