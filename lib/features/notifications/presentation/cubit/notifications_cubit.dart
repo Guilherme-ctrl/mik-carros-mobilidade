@@ -15,6 +15,12 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
   StreamSubscription<AppNotification?>? _realtimeSub;
 
+  // Tipos que merecem interromper o motorista. Deliberadamente NÃO inclui
+  // 'mission_queued': o desenho da fila diz que ele só descobre missões futuras
+  // por um indicador discreto (FILA-ADR-5), e um alerta na tela seria o oposto
+  // disso. Nem 'mission_composition_changed', que é contexto, não chamado.
+  static const _alertable = {'mission_assigned', 'comment_added', 'nudge'};
+
   NotificationsCubit(
     this._getMyNotifications,
     this._markAsRead,
@@ -28,8 +34,15 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
     _realtimeSub?.cancel();
     _realtimeSub = _watchNotifications().listen((newNotification) {
-      // Fire local notification only for newly inserted mission_assigned events
-      if (newNotification != null && newNotification.type == 'mission_assigned') {
+      // Antes só 'mission_assigned' virava notificação local, e isso deixava o
+      // motorista sem aviso nenhum justamente nos dois casos em que alguém está
+      // esperando resposta dele: mensagem no chat e o "cutucar" da Mesa Central.
+      // Com o app aberto em outra tela, ambos passavam em silêncio.
+      //
+      // O push do FCM cobre app fechado ou em background; este caminho cobre o
+      // app em primeiro plano, quando o sistema não exibe o push. Os dois não
+      // colidem: são estados mutuamente exclusivos do app.
+      if (newNotification != null && _alertable.contains(newNotification.type)) {
         _localNotifications.show(newNotification.title, newNotification.body);
       }
       _loadNotifications();
