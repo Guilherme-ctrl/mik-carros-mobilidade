@@ -19,7 +19,12 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   // 'mission_queued': o desenho da fila diz que ele só descobre missões futuras
   // por um indicador discreto (FILA-ADR-5), e um alerta na tela seria o oposto
   // disso. Nem 'mission_composition_changed', que é contexto, não chamado.
-  static const _alertable = {'mission_assigned', 'comment_added', 'nudge'};
+  static const _alertable = {
+    'mission_assigned',
+    'comment_added',
+    'nudge',
+    'car_message',
+  };
 
   NotificationsCubit(
     this._getMyNotifications,

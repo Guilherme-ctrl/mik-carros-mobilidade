@@ -144,6 +144,26 @@ class _MissionsPageState extends State<MissionsPage> with WidgetsBindingObserver
                     onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                   ),
                   const Spacer(),
+                  // Canal privado com o gestor de carros. Precisa do próprio
+                  // BlocBuilder: esta Row está fora do builder das missões (o
+                  // ícone de notificações ao lado usa o dele). Só aparece com o
+                  // carro já resolvido — sem carId não há conversa para abrir.
+                  BlocBuilder<MissionsCubit, MissionsState>(
+                    builder: (context, missionsState) {
+                      if (missionsState is! MissionsLoaded ||
+                          missionsState.carId.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return IconButton(
+                        icon: const Icon(Icons.forum_outlined),
+                        tooltip: 'Gestor de carros',
+                        onPressed: () => Modular.to.pushNamed(
+                          '/car-chat/',
+                          arguments: missionsState.carId,
+                        ),
+                      );
+                    },
+                  ),
                   BlocBuilder<NotificationsCubit, NotificationsState>(
                     builder: (context, state) {
                       final count = state is NotificationsLoaded ? state.unreadCount : 0;
