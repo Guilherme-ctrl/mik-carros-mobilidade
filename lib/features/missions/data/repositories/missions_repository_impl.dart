@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failure.dart';
 import '../../domain/entities/comment.dart';
 import '../../domain/entities/mission.dart';
+import '../../domain/entities/reopen_result.dart';
 import '../../domain/entities/queue_summary.dart';
 import '../../domain/repositories/missions_repository.dart';
 import '../datasources/missions_remote_datasource.dart';
@@ -89,6 +90,16 @@ class MissionsRepositoryImpl implements MissionsRepository {
     try {
       await _datasource.closeRequest(requestId);
       return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ReopenResult>> reopenRequest(String requestId) async {
+    try {
+      final row = await _datasource.reopenRequest(requestId);
+      return Right(ReopenResult.fromMap(row));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

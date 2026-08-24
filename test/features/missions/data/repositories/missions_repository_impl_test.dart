@@ -4,6 +4,7 @@ import 'package:dartz/dartz.dart';
 import 'package:carros_mik_dundee/features/missions/data/datasources/missions_remote_datasource.dart';
 import 'package:carros_mik_dundee/features/missions/data/repositories/missions_repository_impl.dart';
 import 'package:carros_mik_dundee/features/missions/domain/entities/queue_summary.dart';
+import 'package:carros_mik_dundee/features/missions/domain/entities/reopen_result.dart';
 
 class MockDatasource extends Mock implements MissionsRemoteDatasource {}
 
@@ -107,6 +108,43 @@ void main() {
           .thenThrow(Exception('Ainda falta o desfecho do(s) carro(s): T-B'));
 
       final result = await repository.closeRequest('req-1');
+
+      expect(result.isLeft(), isTrue);
+    });
+
+    // Reabertura (20260824000004). O RETURNS TABLE do RPC chega como linha, e a
+    // conversão para ReopenResult é o que a tela usa para dizer quais carros
+    // voltaram — errar aqui faz o motorista achar que a guarnição inteira voltou.
+    test('reopenRequest converte a linha do RPC em ReopenResult', () async {
+      when(() => datasource.reopenRequest('req-1')).thenAnswer((_) async => {
+            'restored_car_numbers': ['R-B'],
+            'unavailable_car_numbers': ['R-A'],
+          });
+
+      final result = await repository.reopenRequest('req-1');
+
+      final value = result.getOrElse(() => const ReopenResult());
+      expect(value.restored, ['R-B']);
+      expect(value.unavailable, ['R-A']);
+      expect(value.needsReassignment, isFalse);
+    });
+
+    test('reopenRequest sem carro devolvido pede reatribuição', () async {
+      when(() => datasource.reopenRequest('req-1')).thenAnswer((_) async => {
+            'restored_car_numbers': <String>[],
+            'unavailable_car_numbers': ['R-A'],
+          });
+
+      final result = await repository.reopenRequest('req-1');
+
+      expect(result.getOrElse(() => const ReopenResult()).needsReassignment, isTrue);
+    });
+
+    test('reopenRequest failure surfaces as Left', () async {
+      when(() => datasource.reopenRequest('req-1'))
+          .thenThrow(Exception('Só é possível reabrir uma missão encerrada'));
+
+      final result = await repository.reopenRequest('req-1');
 
       expect(result.isLeft(), isTrue);
     });

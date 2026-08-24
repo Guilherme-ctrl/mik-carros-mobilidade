@@ -7,6 +7,7 @@ import 'domain/repositories/missions_repository.dart';
 import 'domain/usecases/add_comment.dart';
 import 'domain/usecases/get_comments.dart';
 import 'domain/usecases/close_request.dart';
+import 'domain/usecases/reopen_request.dart';
 import 'domain/usecases/get_missions_history.dart';
 import 'domain/usecases/get_my_missions.dart';
 import 'domain/usecases/report_outcome.dart';
@@ -31,6 +32,7 @@ class MissionsModule extends Module {
     i.addSingleton<WatchQueueCount>(WatchQueueCount.new);
     i.addSingleton<ReportOutcome>(ReportOutcome.new);
     i.addSingleton<CloseRequest>(CloseRequest.new);
+    i.addSingleton<ReopenRequest>(ReopenRequest.new);
     i.addSingleton<GetComments>(GetComments.new);
     i.addSingleton<AddComment>(AddComment.new);
     i.addSingleton<MissionsCubit>(MissionsCubit.new);

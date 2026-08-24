@@ -17,6 +17,7 @@ abstract class MissionsRemoteDatasource {
   Future<void> updateCarStatus(String requestId, String carId, String newStatus);
   Future<void> reportOutcome(String requestId, String carId, String outcome);
   Future<void> closeRequest(String requestId);
+  Future<Map<String, dynamic>> reopenRequest(String requestId);
   // Emits null whenever a DB change occurs — cubit uses it as a reload trigger
   Stream<void> watchMissionsForCar(String carId);
 
@@ -166,6 +167,15 @@ class MissionsRemoteDatasourceImpl implements MissionsRemoteDatasource {
     // ou chefe de carro) e a exigência de que todos tenham reportado vivem no
     // RPC, não aqui — o app só precisa reagir à mensagem de erro.
     await _client.rpc('close_request', params: {'p_request_id': requestId});
+  }
+
+  @override
+  Future<Map<String, dynamic>> reopenRequest(String requestId) async {
+    // RETURNS TABLE chega como lista de linhas; esta função devolve uma só.
+    final rows = await _client.rpc('reopen_request', params: {'p_request_id': requestId});
+    final list = rows as List?;
+    if (list == null || list.isEmpty) return <String, dynamic>{};
+    return Map<String, dynamic>.from(list.first as Map);
   }
 
   @override

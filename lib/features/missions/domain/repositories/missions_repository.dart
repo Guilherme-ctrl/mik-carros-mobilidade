@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failure.dart';
 import '../entities/comment.dart';
 import '../entities/mission.dart';
+import '../entities/reopen_result.dart';
 import '../entities/queue_summary.dart';
 
 abstract class MissionsRepository {
@@ -11,6 +12,7 @@ abstract class MissionsRepository {
   Future<Either<Failure, void>> updateCarStatus(String requestId, String carId, String newStatus);
   Future<Either<Failure, void>> reportOutcome(String requestId, String carId, String outcome);
   Future<Either<Failure, void>> closeRequest(String requestId);
+  Future<Either<Failure, ReopenResult>> reopenRequest(String requestId);
   // T10.5 — stream emits the current active mission whenever it changes.
   // Returns Either (not a raw Stream<Mission?>) — the boundary rule
   // (team.md § Code Style) applies to streams too; the old raw-Stream

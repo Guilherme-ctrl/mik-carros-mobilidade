@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/mission.dart';
 import '../../domain/repositories/missions_repository.dart';
+import '../../domain/entities/reopen_result.dart';
 import '../../domain/usecases/close_request.dart';
+import '../../domain/usecases/reopen_request.dart';
 import '../../domain/usecases/get_missions_history.dart';
 import '../../domain/usecases/get_my_missions.dart';
 import '../../domain/usecases/report_outcome.dart';
@@ -18,6 +20,7 @@ class MissionsCubit extends Cubit<MissionsState> {
   final WatchActiveMission _watchActiveMission;
   final ReportOutcome _reportOutcome;
   final CloseRequest _closeRequest;
+  final ReopenRequest _reopenRequest;
 
   String? _carId;
   StreamSubscription<dynamic>? _realtimeSub;
@@ -30,6 +33,7 @@ class MissionsCubit extends Cubit<MissionsState> {
     this._watchActiveMission,
     this._reportOutcome,
     this._closeRequest,
+    this._reopenRequest,
   ) : super(MissionsInitial());
 
   Future<void> init() async {
@@ -112,6 +116,24 @@ class MissionsCubit extends Cubit<MissionsState> {
       (_) {
         if (_carId != null) _loadMissions(_carId!);
         return true;
+      },
+    );
+  }
+
+  // Devolve o resultado em vez de só um bool: a tela precisa dizer QUAIS carros
+  // voltaram. Encerrar solta a guarnição e a fila de cada carro avança, então
+  // na reabertura alguns podem já estar em outra missão — e o motorista que
+  // reabriu tem de saber disso.
+  Future<ReopenResult?> reopenMission(String requestId) async {
+    final result = await _reopenRequest(requestId);
+    return result.fold(
+      (f) {
+        emit(MissionsError(f.message));
+        return null;
+      },
+      (r) {
+        if (_carId != null) _loadMissions(_carId!);
+        return r;
       },
     );
   }
