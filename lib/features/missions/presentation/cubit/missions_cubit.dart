@@ -2,31 +2,34 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/mission.dart';
 import '../../domain/repositories/missions_repository.dart';
+import '../../domain/usecases/close_request.dart';
+import '../../domain/usecases/get_missions_history.dart';
 import '../../domain/usecases/get_my_missions.dart';
-import '../../domain/usecases/set_outcome_found.dart';
-import '../../domain/usecases/set_outcome_not_found.dart';
-import '../../domain/usecases/update_mission_status.dart';
+import '../../domain/usecases/report_outcome.dart';
+import '../../domain/usecases/update_car_status.dart';
 import '../../domain/usecases/watch_active_mission.dart';
 import 'missions_state.dart';
 
 class MissionsCubit extends Cubit<MissionsState> {
   final MissionsRepository _repository;
   final GetMyMissions _getMyMissions;
-  final UpdateMissionStatus _updateMissionStatus;
+  final GetMissionsHistory _getMissionsHistory;
+  final UpdateCarStatus _updateCarStatus;
   final WatchActiveMission _watchActiveMission;
-  final SetOutcomeNotFound _setOutcomeNotFound;
-  final SetOutcomeFound _setOutcomeFound;
+  final ReportOutcome _reportOutcome;
+  final CloseRequest _closeRequest;
 
   String? _carId;
-  StreamSubscription<Mission?>? _realtimeSub;
+  StreamSubscription<dynamic>? _realtimeSub;
 
   MissionsCubit(
     this._repository,
     this._getMyMissions,
-    this._updateMissionStatus,
+    this._getMissionsHistory,
+    this._updateCarStatus,
     this._watchActiveMission,
-    this._setOutcomeNotFound,
-    this._setOutcomeFound,
+    this._reportOutcome,
+    this._closeRequest,
   ) : super(MissionsInitial());
 
   Future<void> init() async {
@@ -52,45 +55,63 @@ class MissionsCubit extends Cubit<MissionsState> {
   }
 
   Future<void> _loadMissions(String carId) async {
-    final result = await _getMyMissions(carId);
-    result.fold(
+    // Every row getMissionsForCar returns is this car's CURRENT assignment
+    // (removed_at IS NULL AND is_current) — exactly one, per the "one current
+    // mission per car" invariant this app still holds. A mission can have many
+    // cars, and since the fila-missoes intent a car can have many OPEN rows,
+    // but only one of them is current; the datasource filters on is_current
+    // precisely so firstOrNull below cannot pick up a queued row.
+    final activeResult = await _getMyMissions(carId);
+    final historyResult = await _getMissionsHistory(carId);
+
+    activeResult.fold(
       (f) => emit(MissionsError(f.message)),
       (missions) {
-        final active = missions.where((m) => m.status.isActive).firstOrNull;
-        final history = missions
-            .where((m) => m.status.isTerminal && _isToday(m.createdAt))
-            .toList();
-        emit(MissionsLoaded(activeMission: active, history: history));
+        final history = historyResult.fold(
+          (_) => <Mission>[],
+          (list) => list.where((m) => _isToday(m.createdAt)).toList(),
+        );
+        emit(MissionsLoaded(
+          activeMission: missions.firstOrNull,
+          history: history,
+          carId: carId,
+        ));
       },
     );
   }
 
   Future<void> updateStatus(String requestId, String newStatus) async {
-    final result = await _updateMissionStatus(requestId, newStatus);
+    if (_carId == null) return;
+    final result = await _updateCarStatus(requestId, _carId!, newStatus);
     result.fold(
       (f) => emit(MissionsError(f.message)),
-      (_) {
-        if (_carId != null) _loadMissions(_carId!);
-      },
+      (_) => _loadMissions(_carId!),
     );
   }
 
-  Future<void> setOutcomeNotFound(String requestId) async {
-    final result = await _setOutcomeNotFound(requestId);
+  Future<void> reportOutcome(String requestId, String outcome) async {
+    if (_carId == null) return;
+    final result = await _reportOutcome(requestId, _carId!, outcome);
     result.fold(
       (f) => emit(MissionsError(f.message)),
-      (_) {
-        if (_carId != null) _loadMissions(_carId!);
-      },
+      (_) => _loadMissions(_carId!),
     );
   }
 
-  Future<void> setOutcomeFound(String requestId) async {
-    final result = await _setOutcomeFound(requestId);
-    result.fold(
-      (f) => emit(MissionsError(f.message)),
+  // Encerramento manual (20260824000002). Devolve true quando encerrou, para a
+  // tela poder fechar o diálogo de confirmação só no sucesso e manter a
+  // mensagem de erro visível quando o RPC recusa — tipicamente "ainda falta o
+  // desfecho do carro X", que é acionável e não deve sumir sozinha.
+  Future<bool> closeMission(String requestId) async {
+    final result = await _closeRequest(requestId);
+    return result.fold(
+      (f) {
+        emit(MissionsError(f.message));
+        return false;
+      },
       (_) {
         if (_carId != null) _loadMissions(_carId!);
+        return true;
       },
     );
   }

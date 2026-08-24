@@ -40,7 +40,12 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = mission.status == MissionStatus.completed;
+    // History entries only ever come from getMissionsHistoryForCar
+    // (removal_reason IS NULL — a natural mission closure, ADR-5), so the
+    // found/not_found split is the meaningful distinction here, not a
+    // completed-vs-cancelled one (cancelled/explicitly-removed rows carry
+    // removal_reason='removed' and never reach this list).
+    final isCompleted = mission.ownOutcome == RequestOutcome.found;
     final time = DateFormat('HH:mm').format(mission.createdAt.toLocal());
 
     return ListTile(

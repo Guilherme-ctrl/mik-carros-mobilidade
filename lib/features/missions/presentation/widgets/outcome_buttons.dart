@@ -20,11 +20,12 @@ class _OutcomeButtonsState extends State<OutcomeButtons> {
   Future<void> _setOutcome(bool found) async {
     setState(() => _loading = true);
     final cubit = BlocProvider.of<MissionsCubit>(context);
-    if (found) {
-      await cubit.setOutcomeFound(widget.mission.id);
-    } else {
-      await cubit.setOutcomeNotFound(widget.mission.id);
-    }
+    // ADR-7 — one symmetric call for both outcomes now (report_car_outcome),
+    // replacing the old found/not_found method split.
+    await cubit.reportOutcome(
+      widget.mission.id,
+      found ? RequestOutcome.found.supabaseValue : RequestOutcome.notFound.supabaseValue,
+    );
     if (mounted) setState(() => _loading = false);
   }
 
@@ -33,19 +34,30 @@ class _OutcomeButtonsState extends State<OutcomeButtons> {
     return BlocBuilder<MissionsCubit, MissionsState>(
       builder: (context, state) {
         final busy = _loading || state is MissionsLoading;
+        // Depois de 20260824000002 este par de botões continua na tela mesmo
+        // com o desfecho já reportado, porque agora dá para trocá-lo. Sem
+        // marcar qual está valendo, o motorista veria dois botões idênticos e
+        // não saberia o que já reportou.
+        final selected = widget.mission.ownOutcome;
+        final foundOn    = selected == RequestOutcome.found;
+        final notFoundOn = selected == RequestOutcome.notFound;
         return Row(
           children: [
             Expanded(
               child: FilledButton.icon(
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: Colors.white,
+                  backgroundColor: (selected == null || foundOn)
+                      ? AppColors.success
+                      : AppColors.surface3,
+                  foregroundColor: (selected == null || foundOn)
+                      ? Colors.white
+                      : AppColors.onSurfaceMuted,
                   minimumSize: const Size(0, 48),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                 ),
-                onPressed: busy ? null : () => _setOutcome(true),
+                onPressed: (busy || foundOn) ? null : () => _setOutcome(true),
                 icon: busy
                     ? const SizedBox(
                         width: 16,
@@ -63,14 +75,21 @@ class _OutcomeButtonsState extends State<OutcomeButtons> {
             Expanded(
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.warning,
-                  side: BorderSide(color: AppColors.warning.withValues(alpha: 0.6)),
+                  foregroundColor:
+                      notFoundOn ? AppColors.warning : AppColors.onSurfaceMuted,
+                  backgroundColor:
+                      notFoundOn ? AppColors.statusBusyBg : Colors.transparent,
+                  side: BorderSide(
+                    color: notFoundOn
+                        ? AppColors.warning
+                        : AppColors.warning.withValues(alpha: 0.35),
+                  ),
                   minimumSize: const Size(0, 48),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                 ),
-                onPressed: busy ? null : () => _setOutcome(false),
+                onPressed: (busy || notFoundOn) ? null : () => _setOutcome(false),
                 icon: const Icon(Icons.cancel_outlined, size: 18),
                 label: const Text('Não achei'),
               ),

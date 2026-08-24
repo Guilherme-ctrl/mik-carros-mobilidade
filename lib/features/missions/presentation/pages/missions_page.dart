@@ -262,7 +262,7 @@ class _MissionsPageState extends State<MissionsPage> with WidgetsBindingObserver
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (active != null)
-              ActiveMissionCard(mission: active)
+              ActiveMissionCard(mission: active, carId: state.carId)
             else
               const NoMissionWidget(),
             MissionHistoryList(missions: history),

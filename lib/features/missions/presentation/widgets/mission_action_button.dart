@@ -14,7 +14,12 @@ class MissionActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final next = mission.status.nextDriverStatus;
+    // ownStatus, not the request-level status — FR7: this button only ever
+    // advances THIS car's own progress (update_car_status), never the whole
+    // mission. "returning"'s next step is reporting an outcome (FR6.1), not
+    // another status transition, so nextDriverStatus is null there and
+    // ActiveMissionCard shows OutcomeButtons instead.
+    final next = mission.ownStatus.nextDriverStatus;
     if (next == null) return const SizedBox.shrink();
 
     return BlocBuilder<MissionsCubit, MissionsState>(
@@ -46,7 +51,7 @@ class MissionActionButton extends StatelessWidget {
                       strokeWidth: 2.5,
                     ),
                   )
-                : Text(mission.status.actionLabel),
+                : Text(mission.ownStatus.actionLabel),
           ),
         );
       },

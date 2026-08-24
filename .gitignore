@@ -61,3 +61,11 @@ debug_info_android/
 # iOS Pods
 **/ios/Pods/
 **/ios/.symlinks/
+
+# Segredos locais. dart-define.local carrega GOOGLE_MAPS_API_KEY (cobrada por
+# uso), SUPABASE_URL/ANON_KEY e SENTRY_DSN — nunca deve ser versionado.
+# ATENÇÃO: este arquivo esteve rastreado até 2026-08-24, então a chave segue no
+# histórico deste repositório. O ignore para o sangramento; não desfaz o
+# passado. Restrinja a chave no Google Cloud Console (por package name).
+dart-define.local
+dart-define*
