@@ -12,7 +12,7 @@ String formatRequestForWhatsApp(Mission mission) {
 Nome Líder: $leaderName
 Telefone: $leaderPhone
 
-Endereço: ${mission.street}, ${mission.streetNumber} - ${mission.neighborhood}
+Endereço: ${mission.street}, ${mission.streetNumber} - ${mission.neighborhood}, ${mission.city}
 Maps: $mapsLink
 
 Objetivo: ${mission.objective}''';

@@ -32,7 +32,16 @@ class ActiveMissionCard extends StatelessWidget {
       }
     }
 
-    final dest = Uri.encodeComponent('${mission.fullAddress}, Blumenau, SC');
+    // A coordenada ganha do texto quando existe: navegar por ponto exato não
+    // depende do app de mapas acertar a interpretação do endereço.
+    //
+    // Sem ela, cai no texto — que AGORA carrega a cidade de verdade. Antes esta
+    // linha colava ", Blumenau, SC" fixo, e como a gincana também acontece em
+    // Gaspar, Indaial, Timbó e Pomerode, o motorista era mandado para a rua de
+    // mesmo nome em Blumenau.
+    final dest = mission.hasCoordinates
+        ? '${mission.latitude},${mission.longitude}'
+        : Uri.encodeComponent(mission.navigationAddress);
 
     final Uri nativeUri;
     if (Platform.isAndroid) {

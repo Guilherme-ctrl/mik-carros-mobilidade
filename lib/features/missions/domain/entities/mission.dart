@@ -126,6 +126,13 @@ class Mission extends Equatable {
   final String street;
   final String streetNumber;
   final String neighborhood;
+  // Guardada desde 20260824000006. Antes o app colava ", Blumenau, SC" fixo no
+  // destino, então uma missão em Gaspar mandava o motorista para a rua de mesmo
+  // nome em Blumenau.
+  final String city;
+  // Só quando o endereço veio da busca de endereço. Nulas na digitação manual.
+  final double? latitude;
+  final double? longitude;
   final String objective;
   final String? mapsLink;
   final String? notes;
@@ -144,6 +151,9 @@ class Mission extends Equatable {
     required this.street,
     required this.streetNumber,
     required this.neighborhood,
+    this.city = 'Blumenau',
+    this.latitude,
+    this.longitude,
     required this.objective,
     this.mapsLink,
     this.notes,
@@ -170,6 +180,13 @@ class Mission extends Equatable {
       street:        request['street'] as String,
       streetNumber:  request['street_number'] as String,
       neighborhood:  request['neighborhood'] as String,
+      // Fallback para 'Blumenau' porque a coluna nasceu depois das primeiras
+      // solicitações; o backfill da migration cobre o passado, isto cobre um
+      // app novo lendo uma linha que por algum motivo veio sem cidade.
+      city:          (request['city'] as String?) ?? 'Blumenau',
+      // Chegam como num (int ou double) do PostgREST conforme o valor.
+      latitude:      (request['latitude'] as num?)?.toDouble(),
+      longitude:     (request['longitude'] as num?)?.toDouble(),
       objective:     request['objective'] as String,
       mapsLink:      request['maps_link'] as String?,
       notes:         request['notes'] as String?,
@@ -185,6 +202,14 @@ class Mission extends Equatable {
 
   String get fullAddress => '$street, $streetNumber — $neighborhood';
 
+  // O que vai para o app de mapas quando não há coordenada. A cidade vem daqui
+  // e não mais fixa no código de navegação — era isso que mandava quem estava
+  // em Gaspar para a rua homônima de Blumenau.
+  String get navigationAddress =>
+      '$street, $streetNumber, $neighborhood, $city, SC';
+
+  bool get hasCoordinates => latitude != null && longitude != null;
+
   // Encerramento manual (20260824000002): close_request só aceita quando TODO
   // carro ativo já reportou. A regra é replicada aqui para a tela poder
   // explicar a espera em vez de deixar o motorista bater num erro — o RPC
@@ -197,5 +222,6 @@ class Mission extends Equatable {
       coAssignedCars.where((c) => c.outcome == null).map((c) => c.carNumber).toList();
 
   @override
-  List<Object?> get props => [id, ownStatus, ownOutcome, coAssignedCars];
+  List<Object?> get props =>
+      [id, ownStatus, ownOutcome, coAssignedCars, city, latitude, longitude];
 }

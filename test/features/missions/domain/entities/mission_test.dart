@@ -123,6 +123,57 @@ void main() {
   // close_request recusa enquanto qualquer carro ativo estiver sem desfecho.
   // allCarsReported é a cópia dessa regra que a tela consegue ler, e estes
   // testes existem para que as duas não se separem em silêncio.
+  // Cidade e coordenadas (20260824000006). O destino da navegação deixou de ser
+  // montado com "Blumenau" fixo no código.
+  group('Mission — destino da navegação', () {
+    Map<String, dynamic> row({String? city, num? lat, num? lon}) => {
+          'status': 'car_assigned',
+          'outcome': null,
+          'assigned_at': '2026-08-24T10:00:00Z',
+          'requests': {
+            'id': 'r1',
+            'event': 'Prova',
+            'stage': '1',
+            'street': 'Rua Itajaí',
+            'street_number': '100',
+            'neighborhood': 'Centro',
+            'city': city,
+            'latitude': lat,
+            'longitude': lon,
+            'objective': 'Obj',
+            'maps_link': null,
+            'notes': null,
+            'status': 'car_assigned',
+            'leaders': null,
+          },
+        };
+
+    test('a cidade vem da solicitação, não do código', () {
+      final m = Mission.fromMap(row(city: 'Gaspar'));
+      expect(m.city, 'Gaspar');
+      expect(m.navigationAddress, contains('Gaspar'));
+      expect(m.navigationAddress, isNot(contains('Blumenau')));
+    });
+
+    // A regressão que este teste tranca: com a cidade fixa, uma missão em
+    // Gaspar mandava o motorista para a Rua Itajaí DE BLUMENAU.
+    test('linha sem cidade cai em Blumenau, e não em string vazia', () {
+      expect(Mission.fromMap(row(city: null)).city, 'Blumenau');
+    });
+
+    test('coordenadas são reconhecidas quando existem', () {
+      final m = Mission.fromMap(row(city: 'Blumenau', lat: -26.9194, lon: -49.0661));
+      expect(m.hasCoordinates, isTrue);
+      expect(m.latitude, closeTo(-26.9194, 0.0001));
+    });
+
+    test('endereço digitado à mão fica sem coordenada, e isso não é erro', () {
+      final m = Mission.fromMap(row(city: 'Blumenau'));
+      expect(m.hasCoordinates, isFalse);
+      expect(m.latitude, isNull);
+    });
+  });
+
   group('Mission.allCarsReported / carsPendingOutcome', () {
     Mission build({
       RequestOutcome? own,
