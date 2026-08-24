@@ -96,6 +96,25 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
 
+  config:
+    # Swift Package Manager desligado NESTE projeto, de propósito.
+    #
+    # Com SPM ligado, o sentry_flutter 8.14.2 é resolvido pelo Package.swift
+    # dele, que pede `from: "8.46.0"` — ou seja, qualquer 8.x posterior. O SPM
+    # subiu para sentry-cocoa 8.58.4, onde SentryBinaryImageCache perdeu o
+    # membro `image`, e o plugin (escrito contra a 8.46) não compila mais:
+    #
+    #   Value of type 'SentryBinaryImageCache' has no member 'image'
+    #
+    # O podspec do MESMO plugin pina 'Sentry/HybridSDK' na 8.46.0 EXATA. Ou
+    # seja: o caminho CocoaPods tem a trava que o caminho SPM não tem, e é o
+    # que o autor do plugin de fato testou.
+    #
+    # Desligar aqui (e não via `flutter config`, que é global da máquina)
+    # mantém o ajuste dentro do projeto, versionado, valendo igual no CI e em
+    # qualquer clone. Reavaliar ao subir o sentry_flutter para 9.x.
+    enable-swift-package-manager: false
+
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
