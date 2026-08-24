@@ -2,7 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Vem da configuração de build, não fixo. Estava 'production' fixo, o que
+	     quebra push em build local: um app assinado para desenvolvimento
+	     registra no APNs SANDBOX, e um token de sandbox nunca recebe um envio
+	     production. Falha em silêncio — nenhum erro no app, nenhum erro no
+	     Firebase. Debug -> development, Release/Profile -> production. -->
 	<key>aps-environment</key>
-	<string>production</string>
+	<string>$(APS_ENVIRONMENT)</string>
 </dict>
 </plist>
